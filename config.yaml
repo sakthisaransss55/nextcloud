@@ -1,0 +1,111 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nextcloud
+spec:
+  selector:
+    matchLabels:
+      app: nextcloud
+  template:
+    metadata:
+      labels:
+        app: nextcloud
+    spec:
+      containers:
+      - name: nextcloud
+        image: lscr.io/linuxserver/nextcloud:latest
+        resources:
+          limits:
+            memory: "800Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: nextclouddata
+          mountPath: /data
+        - name: nextcloudconfig
+          mountPath: /config
+      volumes:
+      - name: nextclouddata
+        persistentVolumeClaim:
+          claimName: nextcloud-data-persistent-volume-claim
+      - name: nextcloudconfig
+        persistentVolumeClaim:
+          claimName: nextcloud-config-persistent-volume-claim
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nextcloudservice
+spec:
+  selector:
+    app: nextcloud
+  ports:
+  - port: 80
+    targetPort: 80
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-data-persistent-volume
+spec:
+  capacity:
+    storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: nextcloud-data-storage-class
+  hostPath:
+    path: /home/sakthi/kubestorage/nextcloud/data/
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-data-persistent-volume-claim
+spec:
+  storageClassName: nextcloud-data-storage-class
+  resources:
+    requests:
+      storage: 100Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nextcloud-config-persistent-volume
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: nextcloud-config-storage-class
+  hostPath:
+    path: /home/sakthi/kubestorage/nextcloud/config/
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nextcloud-config-persistent-volume-claim
+spec:
+  storageClassName: nextcloud-config-storage-class
+  resources:
+    requests:
+      storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+  - ReadWriteMany
+
+
+
